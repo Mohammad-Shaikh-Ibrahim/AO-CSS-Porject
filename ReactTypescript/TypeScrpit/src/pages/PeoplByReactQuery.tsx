@@ -6,7 +6,7 @@ import {
 import useSearch from "../hooks/useSearch";
 import useGetPosts from "../hooks/useGetPeople";
 
-let debounceTimer: ReturnType<typeof setTimeout>;
+let filterTimer: ReturnType<typeof setTimeout>;
 
 const PeopleByReactQuery = () => {
   const [search, setSearch] = useState<string>("");
@@ -16,8 +16,8 @@ const PeopleByReactQuery = () => {
   const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearch(value);
-    clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(() => {
+    clearTimeout(filterTimer);
+    filterTimer = setTimeout(() => {
       setFilterPeople(value);
     }, 500);
   };

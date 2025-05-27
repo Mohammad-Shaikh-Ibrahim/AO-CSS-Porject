@@ -1,59 +1,138 @@
-import useGetPeople from "../hooks/useGetPeople";
-import React, { useState } from "react";
+import { useState } from "react";
+import {
+  TextField, Typography, Box, CircularProgress, Button, Table, TableHead,
+  TableRow, TableCell, TableBody, TableContainer, Paper
+} from "@mui/material";
+import useSearch from "../hooks/useSearch";
+import useGetPosts from "../hooks/useGetPeople";
 
-const PeoplByReactQuery: React.FC = () => {
-  const { data: posts, isLoading, isError, error } = useGetPeople();
+let debounceTimer: ReturnType<typeof setTimeout>;
+
+const PeopleByReactQuery = () => {
   const [filter, setFilter] = useState<string>("");
+  const [debouncedFilter, setDebouncedFilter] = useState<string>("");
+  const [pageUrl, setPageUrl] = useState<string | null>(null);
 
-  const filteredPosts = posts?.filter(
-    (post) =>
-      post.title.toLowerCase().includes(filter.toLowerCase())
-  );
+  const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setFilter(value);
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      setDebouncedFilter(value);
+    }, 500);
+  };
 
-  if (isLoading)
-    return (
-      <div className="posts-loader-container">
-        <div className="posts-loader"></div>
-        <span className="posts-loader-text">Loading...</span>
-      </div>
-    );
-  if (isError)
-    return (
-      <div className="posts-error">
-        Error: {(error as Error).message}
-      </div>
-    );
+  const {
+    data: searchData,
+    isLoading: isSearchLoading,
+    isError: isSearchError,
+    error: searchError
+  } = useSearch(debouncedFilter);
+
+  const {
+    data: peopleData,
+    isLoading: isPeopleLoading,
+    isError: isPeopleError,
+    error: peopleError
+  } = useGetPosts(pageUrl);
+
+  const people = debouncedFilter ? searchData : peopleData?.results;
+  const isLoading = isSearchLoading || isPeopleLoading;
+  const isError = isSearchError || isPeopleError;
+  const error = searchError || peopleError;
 
   return (
-    <div className="posts-container">
-      <h2 className="posts-title">
-        <span>Posts</span>
-      </h2>
-      <input
-        type="text"
-        placeholder="Search by title"
+    <Box sx={{ maxWidth: 1100, margin: "2rem auto", p: 2 }}>
+      <Typography variant="h4" align="center" gutterBottom>
+        Get People Using React Query
+      </Typography>
+
+      <TextField
+        label="Search by name"
+        variant="outlined"
         value={filter}
-        onChange={(e) => setFilter(e.target.value)}
-        className="posts-search"
+        onChange={handleFilterChange}
+        fullWidth
+        placeholder="Enter a name"
+        sx={{ mb: 3 }}
+        autoFocus
       />
-      <ul className="posts-list">
-        {filteredPosts?.map((post) => (
-          <li key={post.id} className="posts-list-item">
-            <strong className="posts-list-title">{post.title}</strong>
-            <p className="posts-list-body">{post.body}</p>
-            <div className="posts-list-meta">
-              Post ID: {post.id} | User: {post.userId}
-            </div>
-          </li>
-        ))}
-      </ul>
-      {filteredPosts && filteredPosts.length === 0 && (
-        <div className="posts-no-results">
-          No posts found.
-        </div>
+
+      <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
+        <Button
+          variant="outlined"
+          color="primary"
+          onClick={() => setPageUrl(peopleData?.previous || null)}
+          disabled={!peopleData?.previous || !!debouncedFilter}
+        >
+          Previous
+        </Button>
+        <Button
+          variant="outlined"
+          color="primary"
+          onClick={() => setPageUrl(peopleData?.next || null)}
+          disabled={!peopleData?.next || !!debouncedFilter}
+        >
+          Next
+        </Button>
+      </Box>
+
+      {isLoading && (
+        <Box display="flex" justifyContent="center" alignItems="center" sx={{ mb: 2 }}>
+          <CircularProgress size={24} />
+          <Typography sx={{ ml: 2 }}>Loading...</Typography>
+        </Box>
       )}
-    </div>
+
+      {isError ? (
+        <Typography color="error">
+          Error: {(error as Error)?.message || "Something went wrong"}
+        </Typography>
+      ) : (
+        <TableContainer component={Paper}>
+          <Table>
+            <TableHead>
+              <TableRow>
+                {["Name", "Height", "Mass", "Hair Color", "Skin Color", "Eye Color", "Birth Year", "Gender", "Created", "Edited", "Homeworld"]
+                  .map((header) => (
+                    <TableCell key={header}>{header}</TableCell>
+                ))}
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {people && people.length > 0 ? (
+                people.map((person, idx) => (
+                  <TableRow key={person.name + idx}>
+                    <TableCell>{person.name}</TableCell>
+                    <TableCell>{person.height}</TableCell>
+                    <TableCell>{person.mass}</TableCell>
+                    <TableCell>{person.hair_color}</TableCell>
+                    <TableCell>{person.skin_color}</TableCell>
+                    <TableCell>{person.eye_color}</TableCell>
+                    <TableCell>{person.birth_year}</TableCell>
+                    <TableCell>{person.gender}</TableCell>
+                    <TableCell>{new Date(person.created).toLocaleString()}</TableCell>
+                    <TableCell>{new Date(person.edited).toLocaleString()}</TableCell>
+                    <TableCell>
+                      <a href={person.homeworld} target="_blank" rel="noopener noreferrer">
+                        Homeworld
+                      </a>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={11} align="center">
+                    {debouncedFilter ? "No results found" : "No data"}
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      )}
+    </Box>
   );
 };
 
-export default PeoplByReactQuery;
+export default PeopleByReactQuery;

@@ -1,18 +1,26 @@
 import { useQuery } from "@tanstack/react-query";
 import type { UseQueryResult } from "@tanstack/react-query";
-import type { Post } from "../types/index";
+import type { PeopleResponse } from "../types/index";
+import axios from "axios";
 
-const fetchPosts = async (): Promise<Post[]> => {
-  const res = await fetch("https://jsonplaceholder.typicode.com/posts");
-  if (!res.ok) throw new Error("Network response was not ok");
-  return res.json();
+
+
+const fetchPeople = async (pageUrl: string | null): Promise<PeopleResponse> => {
+  const url = pageUrl || "https://swapi.dev/api/people/";
+  const res = await axios.get(url);
+  return {
+    results: res.data.results,
+    next: res.data.next,
+    previous: res.data.previous,
+  };
 };
 
-const useGetPosts = (): UseQueryResult<Post[]> => {
-  return useQuery<Post[]>({
-    queryKey: ["posts"],
-    queryFn: fetchPosts,
-    staleTime: 1000 * 10, 
+const useGetPosts = (pageUrl: string | null): UseQueryResult<PeopleResponse> => {
+  return useQuery<PeopleResponse>({
+    queryKey: ["people", pageUrl],
+    queryFn: () => fetchPeople(pageUrl),
+    staleTime: 1000 * 60 * 5,
+    
   });
 };
 

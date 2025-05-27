@@ -1,8 +1,7 @@
-export interface Post {
-  userId: number;
-  id: number;
-  title: string;
-  body: string;
+export interface PeopleResponse {
+  results: Person[];
+  next: string | null;
+  previous: string | null;
 }
 
 export type Person ={

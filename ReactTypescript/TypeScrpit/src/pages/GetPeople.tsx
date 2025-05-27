@@ -3,7 +3,7 @@ import axios from 'axios';
 import type { Person } from '../types/index';
 import {
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper,
-  Button, Typography, Box
+  Button, Typography, Box,TextField
 } from '@mui/material';
 
 const GetPeople: React.FC = () => {
@@ -11,6 +11,12 @@ const GetPeople: React.FC = () => {
   const [nextPage, setNextPage] = useState<string | null>(null);
   const [prevPage, setPrevPage] = useState<string | null>(null);
   const [currentUrl, setCurrentUrl] = useState<string>('https://swapi.dev/api/people/');
+  const [filter, setFilter] = useState<string>("");
+  
+  const filteredPeople = people?.filter(
+      (person) =>
+        person.name.toLowerCase().includes(filter.toLowerCase())
+  );
 
   useEffect(() => {
     axios.get(currentUrl)
@@ -29,7 +35,15 @@ const GetPeople: React.FC = () => {
       <Typography variant="h4" align="center" gutterBottom>
         Get People Using Axios
       </Typography>
-      <Box sx={{ display: 'flex', justifyContent: 'flexStart', gap: 2, my: 3 }}>
+      <TextField
+              label="Search by name"
+              variant="outlined"
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+              fullWidth
+              sx={{ mb: 3 }}
+            />
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2, my: 3 }}>
         <Button
           variant="outlined"
           color="primary"
@@ -64,26 +78,34 @@ const GetPeople: React.FC = () => {
               <TableCell>Homeworld</TableCell>
             </TableRow>
           </TableHead>
-          <TableBody>
-            {people.map((person, index) => (
-              <TableRow key={index}>
-                <TableCell>{person.name}</TableCell>
-                <TableCell>{person.height}</TableCell>
-                <TableCell>{person.mass}</TableCell>
-                <TableCell>{person.hair_color}</TableCell>
-                <TableCell>{person.skin_color}</TableCell>
-                <TableCell>{person.eye_color}</TableCell>
-                <TableCell>{person.birth_year}</TableCell>
-                <TableCell>{person.gender}</TableCell>
-                <TableCell>{new Date(person.created).toLocaleString()}</TableCell>
-                <TableCell>{new Date(person.edited).toLocaleString()}</TableCell>
-                <TableCell>
-                  <a href={person.homeworld} target="_blank" rel="noopener noreferrer">
-                    Homeworld
-                  </a>
+         <TableBody>
+            {filteredPeople && filteredPeople.length > 0 ? (
+              filteredPeople.map((person, idx) => (
+                <TableRow key={idx}>
+                  <TableCell>{person.name}</TableCell>
+                  <TableCell>{person.height}</TableCell>
+                  <TableCell>{person.mass}</TableCell>
+                  <TableCell>{person.hair_color}</TableCell>
+                  <TableCell>{person.skin_color}</TableCell>
+                  <TableCell>{person.eye_color}</TableCell>
+                  <TableCell>{person.birth_year}</TableCell>
+                  <TableCell>{person.gender}</TableCell>
+                  <TableCell>{new Date(person.created).toLocaleString()}</TableCell>
+                  <TableCell>{new Date(person.edited).toLocaleString()}</TableCell>
+                  <TableCell>
+                    <a href={person.homeworld} target="_blank" rel="noopener noreferrer">
+                      Homeworld
+                    </a>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={12} align="center">
+                  No people found.
                 </TableCell>
               </TableRow>
-            ))}
+            )}
           </TableBody>
         </Table>
       </TableContainer> 
